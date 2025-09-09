@@ -92,7 +92,7 @@ def handle_client(conn, addr):
                 save_chat(username, msg)
                 for c, uname in clients:
                     # Sende immer im Chat-Format mit Zeitstempel
-                    c.send(encrypt_message(f"[{now}] {username}: {msg}", KEY).encode())
+                    c.send((encrypt_message(f"[{now}] {username}: {msg}", KEY) + "\n").encode())
     except:
         # Client entfernen
         clients[:] = [(c, u) for c, u in clients if c != conn]
@@ -119,9 +119,9 @@ def console_thread(server_socket):
 
 def main():
     s = socket.socket()
-    s.bind(("0.0.0.0", 12345))
+    s.bind(("0.0.0.0", 12346))
     s.listen(5)
-    print("[*] Server listening on port 12345")
+    print("[*] Server listening on port 12346")
     threading.Thread(target=console_thread, args=(s,), daemon=True).start()
     while not stop_flag.is_set():
         try:

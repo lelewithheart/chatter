@@ -100,7 +100,7 @@ def show_homescreen(username):
                 return
             try:
                 pm_sock = socket.socket()
-                pm_sock.connect((HOST, 12345))
+                pm_sock.connect((HOST, 12346))
                 pm_sock.send(f"LOGIN|{username}|{user_password}".encode())
                 pm_sock.recv(1024)  # LOGIN_OK
                 pm_sock.send(f"PM|{empfaenger}|{nachricht}".encode())
@@ -141,7 +141,7 @@ def connect_and_start_chat(username, password, host):
     global client
     client = socket.socket()
     try:
-        client.connect((host, 12345))
+        client.connect((host, 12346))
     except:
         messagebox.showerror("Fehler", f"Verbindung zu {host} fehlgeschlagen.")
         show_homescreen(username)
@@ -199,7 +199,7 @@ def show_auth_window():
         user = entry_user.get()
         pw = entry_pw.get()
         try:
-            client.connect((HOST, 12345))
+            client.connect((HOST, 12346))
         except:
             msg_label.config(text="Verbindung fehlgeschlagen")
             return
@@ -225,7 +225,7 @@ def show_auth_window():
             msg_label.config(text="Passwörter stimmen nicht überein.")
             return
         try:
-            client.connect((HOST, 12345))
+            client.connect((HOST, 12346))
         except:
             msg_label.config(text="Verbindung fehlgeschlagen")
             return
@@ -267,20 +267,24 @@ def show_auth_window():
 # --- Chat GUI ---
 def start_chat(username):
     def receive():
+        buffer = ""
         while True:
             try:
                 data = client.recv(1024).decode()
-                # Prüfe auf PM
-                if data.startswith("PM|"):
-                    _, sender, msg = data.split("|", 2)
-                    save_pm(username, sender, msg)
-                    continue
-                # Immer entschlüsseln, da der Server alles verschlüsselt sendet
-                msg = decrypt_message(data, KEY)
-                chat_box.config(state='normal')
-                chat_box.insert(tk.END, f"{msg}\n")
-                chat_box.config(state='disabled')
-                chat_box.see(tk.END)
+                if not data:
+                    break
+                buffer += data
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if line.startswith("PM|"):
+                        _, sender, msg = line.split("|", 2)
+                        save_pm(username, sender, msg)
+                        continue
+                    msg = decrypt_message(line, KEY)
+                    chat_box.config(state='normal')
+                    chat_box.insert(tk.END, f"{msg}\n")
+                    chat_box.config(state='disabled')
+                    chat_box.see(tk.END)
             except:
                 break
 
