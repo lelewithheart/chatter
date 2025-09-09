@@ -6,7 +6,7 @@ import sqlite3
 from cipher import encrypt_message, decrypt_message
 
 KEY = "secretpass"
-HOST = "127.0.0.1"
+HOST = "46.62.206.103"
 
 client = socket.socket()
 user_password = None  # Passwort global speichern
