@@ -71,8 +71,7 @@ def handle_client(conn, addr):
         history = chatcur.fetchall()
         for uname, msg, ts in history:
             try:
-                # Immer im Chat-Format mit Zeitstempel senden
-                conn.send(encrypt_message(f"[{ts[:16]}] {uname}: {msg}", KEY).encode())
+                conn.send((encrypt_message(f"[{ts[:16]}] {uname}: {msg}", KEY) + "\n").encode())
             except:
                 pass
         # --- Chat/PM-Loop ---
@@ -90,8 +89,8 @@ def handle_client(conn, addr):
                 now = datetime.now().strftime("%Y-%m-%d %H:%M")
                 print(f"{username}@{addr}: {msg}")
                 save_chat(username, msg)
+                # Im Chat/PM-Loop:
                 for c, uname in clients:
-                    # Sende immer im Chat-Format mit Zeitstempel
                     c.send((encrypt_message(f"[{now}] {username}: {msg}", KEY) + "\n").encode())
     except:
         # Client entfernen
