@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS chat (
 chatdb.commit()
 
 def save_chat(username, message):
+    if not message.strip():
+        return  # Leere Nachrichten nicht speichern
     chatcur.execute("INSERT INTO chat (username, message) VALUES (?, ?)", (username, message))
     chatdb.commit()
 
@@ -70,6 +72,8 @@ def handle_client(conn, addr):
         chatcur.execute("SELECT username, message, timestamp FROM chat ORDER BY id ASC")
         history = chatcur.fetchall()
         for uname, msg, ts in history:
+            if not msg.strip():
+                continue  # Leere Nachrichten überspringen
             try:
                 conn.send((encrypt_message(f"[{ts[:16]}] {uname}: {msg}", KEY) + "\n").encode())
             except:
@@ -77,6 +81,8 @@ def handle_client(conn, addr):
         # --- Chat/PM-Loop ---
         while True:
             data = conn.recv(1024).decode()
+            if not data.strip():
+                continue  # Leere Nachrichten ignorieren
             if data.startswith("PM|"):
                 # PM|empfaenger|nachricht
                 _, empfaenger, nachricht = data.split("|", 2)
