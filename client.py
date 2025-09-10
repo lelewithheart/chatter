@@ -25,6 +25,15 @@ CREATE TABLE IF NOT EXISTS messages (
 """)
 msgdb.commit()
 
+msgcur.execute("""
+CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    favname TEXT,
+    ip TEXT
+)
+""")
+msgdb.commit()
+
 def save_pm(username, sender, message):
     msgcur.execute("INSERT INTO messages (username, sender, message) VALUES (?, ?, ?)", (username, sender, message))
     msgdb.commit()
@@ -32,6 +41,18 @@ def save_pm(username, sender, message):
 def load_inbox(username):
     msgcur.execute("SELECT sender, message, timestamp FROM messages WHERE username=? ORDER BY timestamp DESC", (username,))
     return msgcur.fetchall()
+
+def add_favorite(favname, ip):
+    msgcur.execute("INSERT INTO favorites (favname, ip) VALUES (?, ?)", (favname, ip))
+    msgdb.commit()
+
+def load_favorites():
+    msgcur.execute("SELECT id, favname, ip FROM favorites ORDER BY favname")
+    return msgcur.fetchall()
+
+def delete_favorite(favid):
+    msgcur.execute("DELETE FROM favorites WHERE id=?", (favid,))
+    msgdb.commit()
 
 # --- Inbox GUI ---
 def show_inbox(username):
@@ -54,7 +75,7 @@ def show_inbox(username):
 
 # --- Homescreen GUI ---
 def show_homescreen(username):
-    home = tk.Tk()
+    home = tk.Toplevel()
     home.title("Chatter Homescreen")
     home.geometry("500x500")  # Größer
     home.configure(bg="#f0f4fa")
@@ -91,49 +112,9 @@ def show_homescreen(username):
         tk.Button(btn_frame, text="Zurück zum Hauptmenü", command=win.destroy, font=font_button, bg="#e0e7ef", fg="#333", bd=0, relief="ridge", activebackground="#d0d7df").pack(side='left', padx=4)
         entry_ip.bind('<Return>', lambda e: connect_custom())
 
-    def go_pm():
-        def send_pm():
-            empfaenger = entry_user.get().strip()
-            nachricht = entry_msg.get().strip()
-            if not empfaenger or not nachricht:
-                msg_label.config(text="Bitte Empfänger und Nachricht angeben.")
-                return
-            try:
-                pm_sock = socket.socket()
-                pm_sock.connect((HOST, 12346))
-                pm_sock.send(f"LOGIN|{username}|{user_password}".encode())
-                pm_sock.recv(1024)  # LOGIN_OK
-                pm_sock.send(f"PM|{empfaenger}|{nachricht}".encode())
-                pm_sock.close()
-                messagebox.showinfo("Hinweis", f"Privatnachricht an {empfaenger} gesendet.")
-                win.destroy()
-            except:
-                messagebox.showerror("Fehler", "Verbindung zum Server fehlgeschlagen.")
-                win.destroy()
-                return
-        win = tk.Toplevel(home)
-        win.title("Privatnachricht senden")
-        win.geometry("400x240")
-        win.configure(bg="#f0f4fa")
-        tk.Label(win, text="Empfänger:", font=font_label, bg="#f0f4fa").pack(pady=(18,2))
-        entry_user = tk.Entry(win, font=font_label)
-        entry_user.pack(pady=2)
-        tk.Label(win, text="Nachricht:", font=font_label, bg="#f0f4fa").pack(pady=(10,2))
-        entry_msg = tk.Entry(win, font=font_label)
-        entry_msg.pack(pady=2)
-        msg_label = tk.Label(win, text="", fg="red", bg="#f0f4fa", font=font_label)
-        msg_label.pack()
-        btn_frame = tk.Frame(win, bg="#f0f4fa")
-        btn_frame.pack(pady=12)
-        tk.Button(btn_frame, text="Senden", command=send_pm, font=font_button, bg="#4f8cff", fg="white", bd=0, relief="ridge", activebackground="#357ae8").pack(side='left', padx=4)
-        tk.Button(btn_frame, text="Zurück zum Hauptmenü", command=win.destroy, font=font_button, bg="#e0e7ef", fg="#333", bd=0, relief="ridge", activebackground="#d0d7df").pack(side='left', padx=4)
-        entry_user.bind('<Return>', lambda e: send_pm())
-        entry_msg.bind('<Return>', lambda e: send_pm())
-
     tk.Button(home, text="Globaler Chat", command=go_global, font=font_button, bg="#4f8cff", fg="white", bd=0, relief="ridge", activebackground="#357ae8").pack(fill="x", padx=60, pady=12, ipady=6)
     tk.Button(home, text="Zu Chat-Server mit IP verbinden", command=go_custom, font=font_button, bg="#4f8cff", fg="white", bd=0, relief="ridge", activebackground="#357ae8").pack(fill="x", padx=60, pady=12, ipady=6)
-    tk.Button(home, text="Privatnachricht schicken", command=go_pm, font=font_button, bg="#4f8cff", fg="white", bd=0, relief="ridge", activebackground="#357ae8").pack(fill="x", padx=60, pady=12, ipady=6)
-    tk.Button(home, text="Inbox", command=lambda: show_inbox(username), font=font_button, bg="#e0e7ef", fg="#333", bd=0, relief="ridge", activebackground="#d0d7df").pack(fill="x", padx=60, pady=12, ipady=6)
+    tk.Button(home, text="Favoriten", command=lambda: show_favorites(username, home), font=font_button, bg="#e0e7ef", fg="#333", bd=0, relief="ridge", activebackground="#d0d7df").pack(fill="x", padx=60, pady=12, ipady=6)
 
     home.mainloop()
 
@@ -157,7 +138,7 @@ def connect_and_start_chat(username, password, host):
 # --- Auth GUI ---
 def show_auth_window():
     global user_password
-    auth_win = tk.Tk()
+    auth_win = tk.Toplevel()
     auth_win.title("Login/Register")
     auth_win.geometry("500x400")  # Größer
     auth_win.configure(bg="#f0f4fa")
@@ -331,5 +312,78 @@ def start_chat(username):
     threading.Thread(target=receive, daemon=True).start()
     window.mainloop()
 
+def show_favorites(username, parent_win=None):
+    if parent_win:
+        parent_win.destroy()
+    fav_win = tk.Toplevel()
+    fav_win.title("Favoriten")
+    fav_win.geometry("500x500")
+    fav_win.configure(bg="#f0f4fa")
+    font_label = ("Segoe UI", 12)
+    tk.Label(fav_win, text="Deine Lieblingsserver", font=("Segoe UI", 15, "bold"), bg="#f0f4fa").pack(pady=(12, 8))
+    listbox = tk.Listbox(fav_win, font=font_label, width=60, height=18)
+    listbox.pack(padx=12, pady=8, fill="both", expand=True)
+
+    def refresh():
+        listbox.delete(0, tk.END)
+        for fid, name, ip in load_favorites():
+            listbox.insert(tk.END, f"{name} ({ip})")
+
+    def add_fav():
+        def save_new():
+            name = entry_name.get().strip()
+            ip = entry_ip.get().strip()
+            if not name or not ip:
+                msg_label.config(text="Name und IP angeben!")
+                return
+            add_favorite(name, ip)
+            win.destroy()
+            refresh()
+        win = tk.Toplevel(fav_win)
+        win.title("Favorit hinzufügen")
+        win.geometry("350x180")
+        win.configure(bg="#f0f4fa")
+        tk.Label(win, text="Name:", font=font_label, bg="#f0f4fa").pack(pady=(18,2))
+        entry_name = tk.Entry(win, font=font_label)
+        entry_name.pack(pady=2)
+        tk.Label(win, text="IP:", font=font_label, bg="#f0f4fa").pack(pady=(10,2))
+        entry_ip = tk.Entry(win, font=font_label)
+        entry_ip.pack(pady=2)
+        msg_label = tk.Label(win, text="", fg="red", bg="#f0f4fa", font=font_label)
+        msg_label.pack()
+        tk.Button(win, text="Add", command=save_new, font=font_label, bg="#4f8cff", fg="white", bd=0).pack(pady=8)
+        entry_ip.bind('<Return>', lambda e: save_new())
+
+    def delete_selected():
+        sel = listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        favs = load_favorites()
+        favid = favs[idx][0]
+        delete_favorite(favid)
+        refresh()
+
+    def connect_selected():
+        sel = listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        favs = load_favorites()
+        name, ip = favs[idx][1], favs[idx][2]
+        fav_win.destroy()
+        connect_and_start_chat(username, user_password, ip)
+
+    btn_frame = tk.Frame(fav_win, bg="#f0f4fa")
+    btn_frame.pack(pady=8)
+    tk.Button(btn_frame, text="Hinzufügen", command=add_fav, font=font_label, bg="#4f8cff", fg="white", bd=0).pack(side='left', padx=4)
+    tk.Button(btn_frame, text="Löschen", command=delete_selected, font=font_label, bg="#e0e7ef", bd=0).pack(side='left', padx=4)
+    tk.Button(btn_frame, text="Verbinden", command=connect_selected, font=font_label, bg="#4f8cff", fg="white", bd=0).pack(side='left', padx=4)
+    tk.Button(btn_frame, text="Zurück", command=fav_win.destroy, font=font_label, bg="#e0e7ef", bd=0).pack(side='left', padx=4)
+    refresh()
+
 if __name__ == "__main__":
+    # Root-Fenster erzeugen und verstecken
+    root = tk.Tk()
+    root.withdraw()
     show_auth_window()

@@ -1,6 +1,7 @@
 import socket, threading
 import sqlite3
 from cipher import decrypt_message, encrypt_message
+from datetime import datetime
 
 KEY = "secretpass"
 clients = []
@@ -19,6 +20,8 @@ CREATE TABLE IF NOT EXISTS chat (
 chatdb.commit()
 
 def save_chat(username, message):
+    if not message.strip():
+        return  # Leere Nachrichten nicht speichern
     chatcur.execute("INSERT INTO chat (username, message) VALUES (?, ?)", (username, message))
     chatdb.commit()
 
@@ -38,8 +41,21 @@ def handle_client(conn, addr):
             else:
                 conn.send("INVALID_CMD".encode())
         clients.append((conn, username))
+        # --- Sende Chatverlauf ---
+        chatcur.execute("SELECT username, message, timestamp FROM chat ORDER BY id ASC")
+        history = chatcur.fetchall()
+        for uname, msg, ts in history:
+            if not msg.strip():
+                continue
+            try:
+                conn.send((encrypt_message(f"[{ts[:16]}] {uname}: {msg}", KEY) + "\n").encode())
+            except:
+                pass
+        # --- Chat/PM-Loop ---
         while True:
             data = conn.recv(1024).decode()
+            if not data.strip():
+                continue
             if data.startswith("PM|"):
                 _, empfaenger, nachricht = data.split("|", 2)
                 for c, uname in clients:
@@ -48,22 +64,26 @@ def handle_client(conn, addr):
                         break
             else:
                 msg = decrypt_message(data, KEY)
+                now = datetime.now().strftime("%Y-%m-%d %H:%M")
                 print(f"{username}@{addr}: {msg}")
                 save_chat(username, msg)
                 for c, uname in clients:
-                    c.send(encrypt_message(f"{username}: {msg}", KEY).encode())
+                    c.send((encrypt_message(f"[{now}] {username}: {msg}", KEY) + "\n").encode())
     except:
         clients[:] = [(c, u) for c, u in clients if c != conn]
         conn.close()
 
 def main():
     s = socket.socket()
-    s.bind(("0.0.0.0", 12345))
+    s.bind(("0.0.0.0", 12346))
     s.listen(5)
-    print("[*] Server-Instance listening on port 12345")
+    print("[*] Server-Instance listening on port 12346")
     while True:
-        conn, addr = s.accept()
-        threading.Thread(target=handle_client, args=(conn, addr)).start()
+        try:
+            conn, addr = s.accept()
+            threading.Thread(target=handle_client, args=(conn, addr)).start()
+        except OSError:
+            break
 
 if __name__ == "__main__":
     main()
