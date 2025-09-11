@@ -5,6 +5,13 @@ import shutil
 import subprocess
 import ctypes
 import sys
+import subprocess
+
+
+def restart_client():
+    print("Starte Client...")
+    subprocess.Popen([CLIENT_PATH])
+    sys.exit()  # statt exit()
 
 def is_admin():
     try:
@@ -58,11 +65,6 @@ def replace_files():
         os.remove(VERSION_PATH)
     os.rename(NEW_VERSION_PATH, VERSION_PATH)
     print("Versionsdatei aktualisiert.")
-
-def restart_client():
-    print("Starte Client...")
-    subprocess.Popen([CLIENT_PATH])
-    exit()
 
 if __name__ == "__main__":
     download_new_client()
