@@ -3,6 +3,22 @@ import time
 import requests
 import shutil
 import subprocess
+import ctypes
+import sys
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+if not is_admin():
+    # Neustart mit Adminrechten
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", sys.executable, " ".join(sys.argv), None, 1
+    )
+    sys.exit()
+
 
 # URLs zur neuesten Version (Client & Version)
 UPDATE_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/dist/client.exe"
