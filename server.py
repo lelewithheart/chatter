@@ -56,9 +56,9 @@ def handle_client(conn, addr):
                     try:
                         with open("version.txt", "r") as f:
                             version = f.read().strip()
-                        conn.send(f"VERSION|{version}".encode())
+                        conn.send(f"VERSION|{version}".encode("us-ascii"))
                     except FileNotFoundError:
-                        conn.send("VERSION|unknown".encode())
+                        conn.send("VERSION|unknown".encode("us-ascii"))
                 else:
                     conn.send("LOGIN_FAIL".encode())
             elif data.startswith("REGISTER|"):
