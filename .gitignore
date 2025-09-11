@@ -1,7 +1,6 @@
 *.db
 
 build/*
-dist/*
 
 client.spec
 updater.spec

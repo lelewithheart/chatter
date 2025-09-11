@@ -5,8 +5,8 @@ import shutil
 import subprocess
 
 # URLs zur neuesten Version (Client & Version)
-UPDATE_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/client.exe"
-VERSION_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/version.txt"
+UPDATE_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/dist/client.exe"
+VERSION_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/dist/version.txt"
 
 CLIENT_PATH = "client.exe"
 NEW_CLIENT_PATH = "client_new.exe"
