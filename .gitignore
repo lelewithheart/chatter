@@ -1,7 +1,7 @@
 *.db
 
-build/
-dist/
+build/*
+dist/*
 
 client.spec
 
