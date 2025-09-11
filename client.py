@@ -143,18 +143,21 @@ def connect_and_start_chat(username, password, host):
         messagebox.showerror("Fehler", "Login am Zielserver fehlgeschlagen.")
         show_homescreen(username)
         return
-    
+
     server_version_msg = client.recv(1024).decode("ascii", errors="ignore")
     if server_version_msg.startswith("VERSION|"):
         server_version = server_version_msg.split("|", 1)[1].strip()
+        # nur Zahlen und Punkte behalten
+        server_version = re.sub(r"[^0-9.]", "", server_version)
+
         try:
             with open("version.txt", "r") as f:
                 local_version = f.read().strip()
+                local_version = re.sub(r"[^0-9.]", "", local_version)
         except FileNotFoundError:
             local_version = "unknown"
 
         if local_version != server_version:
-            # Popup anzeigen
             def run_updater():
                 try:
                     subprocess.Popen(["Updater.exe"])
@@ -166,11 +169,16 @@ def connect_and_start_chat(username, password, host):
 
             update_win = tk.Toplevel()
             update_win.title("Update notwendig")
-            tk.Label(update_win, text=f"Deine Version: {local_version}\nServer-Version: {server_version}\n\nBitte updaten!", font=("Segoe UI", 12)).pack(padx=20, pady=20)
-            tk.Button(update_win, text="Update starten", command=run_updater, font=("Segoe UI", 12, "bold"), bg="#4f8cff", fg="white").pack(pady=10)
-            update_win.protocol("WM_DELETE_WINDOW", run_updater)  # Wenn Fenster geschlossen wird → auch Updater starten
+            tk.Label(
+                update_win,
+                text=f"Deine Version: {local_version}\nServer-Version: {server_version}\n\nBitte updaten!",
+                font=("Segoe UI", 12)
+            ).pack(padx=20, pady=20)
+            tk.Button(update_win, text="Update starten", command=run_updater,
+                    font=("Segoe UI", 12, "bold"), bg="#4f8cff", fg="white").pack(pady=10)
+            update_win.protocol("WM_DELETE_WINDOW", run_updater)
             return
-    
+
     start_chat(username)
 
 # --- Auth GUI ---
