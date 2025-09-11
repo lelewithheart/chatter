@@ -7,6 +7,13 @@ from cipher import encrypt_message, decrypt_message
 import subprocess
 import sys
 import os
+from pathlib import Path
+
+# AppData/Local für den Benutzer
+appdata = Path(os.getenv('LOCALAPPDATA')) / "GhostChat"
+appdata.mkdir(parents=True, exist_ok=True)
+
+db_path = appdata / "messages.db"
 
 KEY = "secretpass"
 HOST = "46.62.206.103"
@@ -15,7 +22,7 @@ client = socket.socket()
 user_password = None  # Passwort global speichern
 
 # --- SQLite DB für PNs ---
-msgdb = sqlite3.connect("messages.db")
+msgdb = sqlite3.connect(db_path)
 msgcur = msgdb.cursor()
 msgcur.execute("""
 CREATE TABLE IF NOT EXISTS messages (
