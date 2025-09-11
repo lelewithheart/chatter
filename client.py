@@ -8,6 +8,7 @@ import subprocess
 import sys
 import os
 from pathlib import Path
+import re
 
 # AppData/Local für den Benutzer
 appdata = Path(os.getenv('LOCALAPPDATA')) / "GhostChat"
