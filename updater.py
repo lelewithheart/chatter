@@ -29,7 +29,7 @@ if not is_admin():
 
 # URLs zur neuesten Version (Client & Version)
 UPDATE_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/dist/client.exe"
-VERSION_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/dist/version.txt"
+VERSION_URL = "https://raw.githubusercontent.com/lelewithheart/chatter/main/version.txt"
 
 CLIENT_PATH = "client.exe"
 NEW_CLIENT_PATH = "client_new.exe"
