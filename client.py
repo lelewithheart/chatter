@@ -4,6 +4,9 @@ import tkinter as tk
 from tkinter import messagebox
 import sqlite3
 from cipher import encrypt_message, decrypt_message
+import subprocess
+import sys
+import os
 
 KEY = "secretpass"
 HOST = "46.62.206.103"
@@ -133,6 +136,34 @@ def connect_and_start_chat(username, password, host):
         messagebox.showerror("Fehler", "Login am Zielserver fehlgeschlagen.")
         show_homescreen(username)
         return
+    
+    server_version_msg = client.recv(1024).decode()
+    if server_version_msg.startswith("VERSION|"):
+        server_version = server_version_msg.split("|", 1)[1].strip()
+        try:
+            with open("version.txt", "r") as f:
+                local_version = f.read().strip()
+        except FileNotFoundError:
+            local_version = "unknown"
+
+        if local_version != server_version:
+            # Popup anzeigen
+            def run_updater():
+                try:
+                    subprocess.Popen(["Updater.exe"])
+                except FileNotFoundError:
+                    messagebox.showerror("Fehler", "Updater.exe nicht gefunden!")
+                finally:
+                    client.close()
+                    sys.exit(0)  # Client beenden
+
+            update_win = tk.Toplevel()
+            update_win.title("Update notwendig")
+            tk.Label(update_win, text=f"Deine Version: {local_version}\nServer-Version: {server_version}\n\nBitte updaten!", font=("Segoe UI", 12)).pack(padx=20, pady=20)
+            tk.Button(update_win, text="Update starten", command=run_updater, font=("Segoe UI", 12, "bold"), bg="#4f8cff", fg="white").pack(pady=10)
+            update_win.protocol("WM_DELETE_WINDOW", run_updater)  # Wenn Fenster geschlossen wird → auch Updater starten
+            return
+    
     start_chat(username)
 
 # --- Auth GUI ---
