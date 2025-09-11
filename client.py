@@ -144,7 +144,7 @@ def connect_and_start_chat(username, password, host):
         show_homescreen(username)
         return
     
-    server_version_msg = client.recv(1024).decode()
+    server_version_msg = client.recv(1024).decode("us-ascii", errors="ignore")
     if server_version_msg.startswith("VERSION|"):
         server_version = server_version_msg.split("|", 1)[1].strip()
         try:
